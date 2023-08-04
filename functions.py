@@ -10,24 +10,23 @@ def make_connection():
     client = pyodata.Client(SERVICE_URL, session)
     return client
 
-def fetch_data(last_fetched,records_till,batch_size):
+def fetch_data(sap_client,last_fetched,records_till,batch_size):
     for i in range(last_fetched, records_till, batch_size):
         if i + batch_size >= records_till:
-            chunk = sap_client.entity_sets.zpoctestSet.get_entities().top(records_till - i).skip(i).execute()
+            top_count = records_till - i
+            chunk = sap_client.entity_sets.zpoctestSet.get_entities().top(top_count).skip(i).execute()
             current_status = records_till
         else :
-            chunk = sap_client.entity_sets.zpoctestSet.get_entities().top(batch_size).skip(i).execute()
+            top_count = batch_size
+            chunk = sap_client.entity_sets.zpoctestSet.get_entities().top(top_count).skip(i).execute()
             current_status = i+batch_size
         for record in chunk:
             with open('data.csv', 'a') as f:
                 f.write(f"{record.Id},{record.Name},{record.Lastname},{record.Address},{record.City},{record.Postalcode},{record.Country},{record.Email},{record.Phonenumber},{record.Birthdate},{record.Gender},{record.Nationality},{record.Preferredlanguage},{record.Creditlimit},{record.Registrationdate},{record.Lastpurchasedate},{record.Subscriptionstatus},{record.Loyaltypoints},{record.Customersegment},{record.Customercategory}\n")
-        
-        print("No. of records fetched till now :",current_status)
+        with open('metadata.txt','w') as f:
+            f.write(str(current_status))
 
-def total_records():
+def total_records(sap_client):
     num = sap_client.entity_sets.zpoctestSet.get_entities().count().execute()
     return num
 
-sap_client = make_connection()
-fetch_data(1900,2400,100)
-print("THE TOTAL NUMBER OF RECORDS ARE : ", total_records())
